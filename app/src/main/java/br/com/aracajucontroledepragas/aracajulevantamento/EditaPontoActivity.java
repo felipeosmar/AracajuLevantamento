@@ -3,12 +3,15 @@ package br.com.aracajucontroledepragas.aracajulevantamento;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,7 +34,7 @@ public class EditaPontoActivity extends AppCompatActivity {
     List<String> spinnerList_tipoponto = new ArrayList<String>();
     List<String> spinnerList_volume = new ArrayList<String>();
     EditText edt_obs;
-    String pontoID, stg_levantamento;
+    String pontoID, stg_levantamento, tipoponto, volume;
     TextView tv_pontoID;
 
     @Override
@@ -68,6 +71,7 @@ public class EditaPontoActivity extends AppCompatActivity {
                     ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(EditaPontoActivity.this, android.R.layout.simple_spinner_item, spinnerList_tipoponto);
                     arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                     spinner_tipoponto.setAdapter(arrayAdapter);
+
                 }
             }
         })
@@ -112,6 +116,8 @@ public class EditaPontoActivity extends AppCompatActivity {
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
 
+                        tipoponto = document.getString("tipoponto");
+                        volume = document.getString("volumeBTI");
                         edt_obs.setText(document.getString("observacao"));
 
                         Log.d(TAG, "DocumentSnapshot data: " + document.getData());
@@ -123,27 +129,63 @@ public class EditaPontoActivity extends AppCompatActivity {
                 }
             }
         });
+
+        //TODO fazer carregar valores do banco nos campos de tela.
+
     }
+
+
 
     public void excluirponto(View view) {
+        AlertDialog alertDialog = new AlertDialog.Builder(EditaPontoActivity.this).create();
+        alertDialog.setTitle("Excluindo ponto");
+        alertDialog.setMessage("Tem certeza que deseja excluir este ponto?");
+        // Alert dialog button
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "EXCLUIR",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Alert dialog action goes here
+                        // onClick button code here
+
+                        mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos").document(pontoID)
+                                .delete()
+                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                    @Override
+                                    public void onSuccess(Void aVoid) {
+                                        Toast.makeText(EditaPontoActivity.this, " Ponto EXCLUIDO com sucesso", Toast.LENGTH_SHORT).show();
+                                        Log.d(TAG, "DocumentSnapshot successfully deleted!");
+                                    }
+                                })
+                                .addOnFailureListener(new OnFailureListener() {
+                                    @Override
+                                    public void onFailure(@NonNull Exception e) {
+                                        Log.w(TAG, "Error deleting document", e);
+                                    }
+                                });
 
 
-        mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos").document(pontoID)
-                .delete()
-                .addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        Toast.makeText(EditaPontoActivity.this, " Ponto EXCLUIDO com sucesso", Toast.LENGTH_SHORT).show();
-                        Log.d(TAG, "DocumentSnapshot successfully deleted!");
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.w(TAG, "Error deleting document", e);
+
+                        finish();
+                        dialog.dismiss();// use dismiss to cancel alert dialog
+
                     }
                 });
-        finish();
+        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "CANCELAR",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // Alert dialog action goes here
+                        // onClick button code here
+
+                        dialog.dismiss();// use dismiss to cancel alert dialog
+
+                    }
+                });
+
+        alertDialog.show();
+
+
     }
+
+
 
 }

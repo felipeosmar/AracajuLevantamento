@@ -41,7 +41,7 @@ public class GravaPontoActivity extends AppCompatActivity implements AdapterView
     List<String> spinnerList_volume = new ArrayList<String>();
     String androidId, stg_levantamento;
     EditText edt_obs;
-    String volume, tipo_ponto;
+    String volume, tipo_ponto, obs;
     Double dou_lat, dou_lng, dou_alt, dou_acc;
     TextView tv_androidID;
 
@@ -70,7 +70,6 @@ public class GravaPontoActivity extends AppCompatActivity implements AdapterView
             }
         }
         regialView.setText("Reg: " + stg_levantamento + " Lat " + dou_lat + " Long " + dou_lng + " Alt " + dou_alt + " Acc " + dou_acc);
-
 
 
         mDatabase = FirebaseFirestore.getInstance();
@@ -137,9 +136,14 @@ public class GravaPontoActivity extends AppCompatActivity implements AdapterView
     public void gravapontonabase(View view) {
         volume = spinner_volume.getSelectedItem().toString();
         tipo_ponto = String.valueOf(spinner_tipoponto.getSelectedItem());
+        obs = edt_obs.getText().toString();
 
-        if ((tipo_ponto.trim().equals("Aplicação")) && (volume.trim().equals("" ))) {
-            Toast.makeText(GravaPontoActivity.this, " Selecione VOLUME ", Toast.LENGTH_SHORT).show();
+        if ((tipo_ponto.trim().equals("Aplicação")) && (volume.trim().equals(""))) {
+            Toast.makeText(GravaPontoActivity.this, "Selecione VOLUME", Toast.LENGTH_SHORT).show();
+        } else if ((tipo_ponto.trim().equals("Coleta")) && (obs.trim().equals(""))) {
+            Toast.makeText(GravaPontoActivity.this, "Preencha OBSERVAÇÃO", Toast.LENGTH_SHORT).show();
+        } else if ((tipo_ponto.trim().equals("Referência")) && (obs.trim().equals(""))) {
+            Toast.makeText(GravaPontoActivity.this, "Preencha OBSERVAÇÃO", Toast.LENGTH_SHORT).show();
         } else {
             // cria objeto
             Map<String, Object> objeto = new HashMap<>();
@@ -151,7 +155,7 @@ public class GravaPontoActivity extends AppCompatActivity implements AdapterView
             objeto.put("regiao", stg_levantamento.toLowerCase().trim());
             objeto.put("tipoponto", spinner_tipoponto.getSelectedItem());
             objeto.put("volumeBTI", volume);
-            objeto.put("observacao", edt_obs.getText().toString());
+            objeto.put("observacao", obs);
             objeto.put("androidid", androidId);
 
             //grava objeto no banco
