@@ -23,6 +23,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -36,8 +37,7 @@ import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZUR
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW;
 
-
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, LocationListener {
+public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWindowClickListener, OnMapReadyCallback, LocationListener {
     private static final String TAG = "MainActivity";
 
     private FirebaseFirestore mDatabase;
@@ -58,8 +58,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         mDatabase = FirebaseFirestore.getInstance();
-
-
 
         Intent i = getIntent();
         if (i != null) {
@@ -91,7 +89,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         carregapontosnomapa();
 
-
     }
 
 
@@ -106,10 +103,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
         mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(-26.3594415, -49.2029469)));
+
+        mMap.setOnInfoWindowClickListener(this);
 
         DocumentReference documentReference = mDatabase.collection("levantamento").document(stg_levantamento);
         documentReference.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
@@ -133,12 +133,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         });
+
+
+    }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+
+        Intent intent = new Intent(this, EditaPontoActivity.class);
+
+        Bundle params = new Bundle();
+        params.putString("pontoID", marker.getTag().toString());
+        params.putString("levantamento", stg_levantamento);
+        intent.putExtras(params);
+        startActivity(intent);
+
+        Toast.makeText(this, marker.getTag().toString(),
+                Toast.LENGTH_SHORT).show();
     }
 
     public void chamaGravaPonto(View view) {
-
         if (Acc < 21) {
-
             Intent intent = new Intent(this, GravaPontoActivity.class);
 
             Bundle params = new Bundle();
@@ -152,7 +167,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             startActivity(intent);
         } else {
             Toast.makeText(MapsActivity.this, " Precisão de GPS muito baixa, aguarde... ", Toast.LENGTH_SHORT).show();
-
         }
     }
 
@@ -209,29 +223,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+
+
+
     private void carregapontosnomapa() {
+
+
 
         mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos")
                 .get()
                 .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-
                     @Override
                     public void onComplete(@NonNull Task<QuerySnapshot> task) {
                         if (task.isSuccessful()) {
-
                             for (QueryDocumentSnapshot document : task.getResult()) {
-                                pontos_levantados++;
-                                //setContentView(R.layout.activity_maps); // ## nao pode ser essa linha, nao ser por que, seta a Contentexto da task para a tela maps
-
-                                //Log.d(TAG, "Numero de pontos ate agora: " + String.valueOf(pontos_levantados));
-                                //Log.d(TAG, document.getId() + " => " + document.getData());
-
                                 Double lat = document.getGeoPoint("latlon").getLatitude();
                                 Double lng = document.getGeoPoint("latlon").getLongitude();
                                 String tipoponto = String.valueOf(document.get("tipoponto"));
                                 String titulo = document.get("volumeBTI").toString() + " ml";
                                 Float color = HUE_RED;
-
 
                                 if (tipoponto.trim().equals("Coleta")) {
                                     color = HUE_AZURE;
@@ -241,34 +251,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                     color = HUE_YELLOW;
                                     titulo = document.get("observacao").toString();
                                 }
+
+
                                 mMap.addMarker(new MarkerOptions()
                                         .position(new LatLng(lat, lng))
                                         .title(titulo)
-                                        .icon(BitmapDescriptorFactory.defaultMarker(color))
-                                );
+                                        .icon(BitmapDescriptorFactory.defaultMarker(color)))
+                                        .setTag(document.getId());
+
+
+                                pontos_levantados++;
                             }
-
-                            Log.d(TAG, "Numero de pontos fora do FOR: " + pontos_levantados );
+                            pontos_levantados = pontos_levantados / 2;
                             tv_npontos.setText(String.valueOf(pontos_levantados));
-
                         } else {
                             Log.d(TAG, "Error getting documents: ", task.getException());
                         }
-
-
                     }
-
                 });
 
-
-
     }
-
-
 
     @Override
     protected void onResume() {
         super.onResume();
+
         carregapontosnomapa();
     }
 
@@ -283,6 +290,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onProviderDisabled(String provider) {
     }
-
 
 }

@@ -11,33 +11,38 @@
         android:id="@+id/tv_tipoponto"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Tipo do Ponto:"
-        android:textSize="24sp"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="28dp"
+        android:text="Tipo Ponto:"
+        android:textColor="@android:color/black"
+        android:textSize="30sp"
+        app:layout_constraintEnd_toStartOf="@+id/spinner_tipoponto"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
     <Spinner
         android:id="@+id/spinner_tipoponto"
-        android:layout_width="183dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="7dp"
+        android:layout_width="165dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="16dp"
         android:spinnerMode="dialog"
         android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_tipoponto" />
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/tv_tipoponto"
+        app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
     <TextView
         android:id="@+id/tv_observacao"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
         android:text="Observação:"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_androidID" />
+        android:textColor="@android:color/black"
+        android:textSize="30sp"
+        app:layout_constraintEnd_toEndOf="@+id/tv_volume"
+        app:layout_constraintTop_toBottomOf="@+id/tv_volume" />
 
     <Button
         android:id="@+id/btn_marca_ponto2"
@@ -53,40 +58,36 @@
     <Spinner
         android:id="@+id/spinner_volume"
         android:layout_width="150dp"
-        android:layout_height="32dp"
-        android:layout_marginTop="32dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="24dp"
         android:fadeScrollbars="true"
         android:fadingEdge="horizontal|vertical"
         android:spinnerMode="dialog"
         android:textAlignment="center"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/tv_volume"
+        app:layout_constraintEnd_toEndOf="@+id/spinner_tipoponto"
         app:layout_constraintTop_toBottomOf="@+id/spinner_tipoponto" />
 
     <TextView
         android:id="@+id/tv_volume"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         android:text="Volume:"
-        android:textSize="24sp"
-        app:layout_constraintEnd_toStartOf="@+id/spinner_volume"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/spinner_tipoponto" />
+        android:textColor="@android:color/black"
+        android:textSize="30sp"
+        app:layout_constraintEnd_toEndOf="@+id/tv_tipoponto"
+        app:layout_constraintTop_toBottomOf="@+id/tv_tipoponto" />
 
     <TextView
         android:id="@+id/tv_androidID"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
         android:text="TextView"
         android:textAlignment="center"
         android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@+id/btn_marca_ponto2"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_levantameno" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <EditText
         android:id="@+id/edt_obs"
@@ -107,12 +108,24 @@
         android:id="@+id/tv_levantameno"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
         android:text="TextView"
         android:textAlignment="center"
         android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@+id/tv_androidID"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="PONTO NOVO"
+        android:textColor="@android:color/black"
+        android:textSize="30sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_volume" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
