@@ -13,6 +13,7 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,10 +32,10 @@ public class EditaPontoActivity extends AppCompatActivity {
     private static final String TAG = "EditaPontoActivity";
     private FirebaseFirestore mDatabase;
     Spinner spinner_tipoponto, spinner_volume;
-    List<String> spinnerList_tipoponto = new ArrayList<String>();
-    List<String> spinnerList_volume = new ArrayList<String>();
+    //List<String> spinnerList_tipoponto = new ArrayList<String>();
+    //List<String> spinnerList_volume = new ArrayList<String>();
     EditText edt_obs;
-    String pontoID, stg_levantamento, tipoponto, volume;
+    String pontoID, stg_levantamento, db_tipoponto, db_volume, db_observacao;
     TextView tv_pontoID;
 
     @Override
@@ -57,21 +58,69 @@ public class EditaPontoActivity extends AppCompatActivity {
         tv_pontoID.setText("pontoID : " + pontoID );
 
         mDatabase = FirebaseFirestore.getInstance();
+        readData(new FirestoreCallBackTipoponto() {
+            @Override
+            public void onCallBack(List<String> list) {
+                ArrayAdapter<String> arrayAdapter_tipoponto = new ArrayAdapter<String>(EditaPontoActivity.this, android.R.layout.simple_spinner_item, list);
+                arrayAdapter_tipoponto.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinner_tipoponto.setAdapter(arrayAdapter_tipoponto);
 
+            }
+        });
+        readData(new FirestoreCallBackVolume() {
+            @Override
+            public void onCallBack(List<String> list) {
+                ArrayAdapter<String> arrayAdapter_volume = new ArrayAdapter<String>(EditaPontoActivity.this, android.R.layout.simple_spinner_dropdown_item, list);
+                arrayAdapter_volume.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinner_volume.setAdapter(arrayAdapter_volume);
+            }
+        });
+
+        readData(new FirestoreCallBackPonto() {
+            @Override
+            public void onCallBack(String tipoponto, String volume, String obs) {
+
+
+
+//TODO carergar valores do banco na tela
+
+
+
+                db_tipoponto = tipoponto;
+                db_volume = volume;
+                db_observacao = obs;
+
+                try {
+                    spinner_tipoponto.setSelection(0);
+
+                    //tv_pontoID.setText("Tipo ponto: "+ spinner_tipoponto.get);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+               // tv_pontoID.setText("Tipo ponto: "+db_tipoponto);
+
+            }
+        });
+
+
+
+
+
+    }
+
+    private void readData (final FirestoreCallBackTipoponto firestoreCallBackTipoponto){
         DocumentReference docRef_tipoponto = mDatabase.collection("respostas").document("tipo_ponto");
         docRef_tipoponto.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                 if (task.isSuccessful()) {
-                    //DocumentSnapshot queryDocumentSnapshots_tipoponto = task.getResult();
-
+                    List<String> spinnerList_tipoponto= new ArrayList<String>();
                     for (Object item : task.getResult().getData().values()) {
                         spinnerList_tipoponto.add(item.toString());
                     }
-                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(EditaPontoActivity.this, android.R.layout.simple_spinner_item, spinnerList_tipoponto);
-                    arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    spinner_tipoponto.setAdapter(arrayAdapter);
 
+                    firestoreCallBackTipoponto.onCallBack(spinnerList_tipoponto);
                 }
             }
         })
@@ -82,20 +131,20 @@ public class EditaPontoActivity extends AppCompatActivity {
                         Log.d("Androidview", e.getMessage());
                     }
                 });
+    }
 
+    private void readData ( final FirestoreCallBackVolume firestoreCallBackVolume){
         DocumentReference docRef_volume = mDatabase.collection("respostas").document("volume");
         docRef_volume.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                 if (task.isSuccessful()) {
-                    //DocumentSnapshot queryDocumentSnapshots_volume = task.getResult();
-
+                    List<String> spinnerList_volume= new ArrayList<String>();
                     for (Object item : task.getResult().getData().values()) {
                         spinnerList_volume.add(item.toString());
                     }
-                    ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(EditaPontoActivity.this, android.R.layout.simple_spinner_dropdown_item, spinnerList_volume);
-                    arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                    spinner_volume.setAdapter(arrayAdapter);
+
+                    firestoreCallBackVolume.onCallBack(spinnerList_volume);
                 }
             }
         })
@@ -106,8 +155,9 @@ public class EditaPontoActivity extends AppCompatActivity {
                         Log.d("Androidview", e.getMessage());
                     }
                 });
+    }
 
-
+    private void readData ( final FirestoreCallBackPonto firestoreCallBackPonto) {
         DocumentReference docRef = mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos").document(pontoID);
         docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
@@ -116,9 +166,10 @@ public class EditaPontoActivity extends AppCompatActivity {
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
 
-                        tipoponto = document.getString("tipoponto");
-                        volume = document.getString("volumeBTI");
-                        edt_obs.setText(document.getString("observacao"));
+                        String callback_tipoponto = document.getString("tipoponto");
+                        String callback_volume = document.getString("volumeBTI");
+                        String callback_obs = document.getString("observacao");
+                        firestoreCallBackPonto.onCallBack( callback_tipoponto, callback_volume, callback_obs );
 
                         Log.d(TAG, "DocumentSnapshot data: " + document.getData());
                     } else {
@@ -129,9 +180,18 @@ public class EditaPontoActivity extends AppCompatActivity {
                 }
             }
         });
+    }
 
-        //TODO fazer carregar valores do banco nos campos de tela.
+    private interface FirestoreCallBackVolume{
+        void onCallBack (List<String> list);
+    }
 
+    private interface FirestoreCallBackTipoponto {
+        void onCallBack (List<String> list);
+    }
+
+    private interface FirestoreCallBackPonto {
+        void onCallBack (String tipoponto, String volume, String observacao);
     }
 
 

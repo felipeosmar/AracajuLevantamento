@@ -14,7 +14,8 @@
         android:textSize="36sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btn_excluir" />
 
     <TextView
         android:id="@+id/tv_pontoID"
@@ -45,28 +46,30 @@
         android:text="Tipo Ponto: "
         android:textColor="@android:color/black"
         android:textSize="30sp"
+        app:layout_constraintBottom_toTopOf="@+id/textView5"
         app:layout_constraintEnd_toStartOf="@+id/spinner_tipoponto"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_pontoID" />
+        app:layout_constraintTop_toBottomOf="@+id/textView3" />
 
     <Spinner
         android:id="@+id/spinner_tipoponto"
         android:layout_width="156dp"
         android:layout_height="40dp"
-        android:layout_marginTop="32dp"
+        android:layoutMode="clipBounds"
+        app:layout_constraintBottom_toBottomOf="@+id/textView4"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/textView4"
-        app:layout_constraintTop_toBottomOf="@+id/tv_pontoID" />
+        app:layout_constraintTop_toTopOf="@+id/textView4" />
 
     <Spinner
         android:id="@+id/spinner_volume"
         android:layout_width="139dp"
         android:layout_height="40dp"
-        android:layout_marginTop="24dp"
+        app:layout_constraintBottom_toBottomOf="@+id/textView5"
         app:layout_constraintEnd_toEndOf="@+id/spinner_tipoponto"
-        app:layout_constraintTop_toBottomOf="@+id/spinner_tipoponto" />
+        app:layout_constraintTop_toTopOf="@+id/textView5" />
 
     <TextView
         android:id="@+id/textView5"
@@ -76,6 +79,7 @@
         android:text="Volume: "
         android:textColor="@android:color/black"
         android:textSize="30sp"
+        app:layout_constraintBottom_toTopOf="@+id/textView6"
         app:layout_constraintEnd_toEndOf="@+id/textView4"
         app:layout_constraintTop_toBottomOf="@+id/textView4" />
 
@@ -87,6 +91,7 @@
         android:text="Observação: "
         android:textColor="@android:color/black"
         android:textSize="30sp"
+        app:layout_constraintBottom_toTopOf="@+id/edt_obs"
         app:layout_constraintEnd_toEndOf="@+id/textView5"
         app:layout_constraintTop_toBottomOf="@+id/textView5" />
 
@@ -97,7 +102,9 @@
         android:layout_marginTop="8dp"
         android:ems="10"
         android:inputType="textPersonName"
+        app:layout_constraintBottom_toTopOf="@+id/btn_excluir"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView6" />
 
@@ -107,6 +114,7 @@
         android:layout_height="wrap_content"
         android:onClick="excluirponto"
         android:text="Excluir Ponto"
+        app:layout_constraintBottom_toTopOf="@+id/btn_marca_ponto3"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/edt_obs" />
 </androidx.constraintlayout.widget.ConstraintLayout>
