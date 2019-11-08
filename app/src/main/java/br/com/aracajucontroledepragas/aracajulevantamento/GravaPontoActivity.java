@@ -71,7 +71,6 @@ public class GravaPontoActivity extends AppCompatActivity implements AdapterView
         }
         regialView.setText("Reg: " + stg_levantamento + " Lat " + dou_lat + " Long " + dou_lng + " Alt " + dou_alt + " Acc " + dou_acc);
 
-
         mDatabase = FirebaseFirestore.getInstance();
 
         DocumentReference docRef_tipoponto = mDatabase.collection("respostas").document("tipo_ponto");
@@ -79,8 +78,6 @@ public class GravaPontoActivity extends AppCompatActivity implements AdapterView
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                 if (task.isSuccessful()) {
-                    //DocumentSnapshot queryDocumentSnapshots_tipoponto = task.getResult();
-
                     for (Object item : task.getResult().getData().values()) {
                         spinnerList_tipoponto.add(item.toString());
                     }

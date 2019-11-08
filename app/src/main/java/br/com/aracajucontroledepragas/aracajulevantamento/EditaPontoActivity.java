@@ -1,8 +1,5 @@
 package br.com.aracajucontroledepragas.aracajulevantamento;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,17 +8,17 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
-import com.google.common.collect.Maps;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -60,8 +57,7 @@ public class EditaPontoActivity extends AppCompatActivity {
                 stg_levantamento = params.getString("levantamento");
             }
         }
-        tv_pontoID.setText("pontoID : " + pontoID );
-
+        tv_pontoID.setText("pontoID : " + pontoID);
         mDatabase = FirebaseFirestore.getInstance();
         readData(new FirestoreCallBackTipoponto() {
             @Override
@@ -70,7 +66,6 @@ public class EditaPontoActivity extends AppCompatActivity {
                 arrayAdapter_tipoponto.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 arrayAdapter_tipoponto_p = arrayAdapter_tipoponto;
                 spinner_tipoponto.setAdapter(arrayAdapter_tipoponto);
-
             }
         });
         readData(new FirestoreCallBackVolume() {
@@ -82,35 +77,28 @@ public class EditaPontoActivity extends AppCompatActivity {
                 spinner_volume.setAdapter(arrayAdapter_volume);
             }
         });
-
         readData(new FirestoreCallBackPonto() {
             @Override
             public void onCallBack(String tipoponto, String volume, String observacao) {
-            //TODO carergar valores do banco na tela
-
                 spinner_tipoponto.setSelection(getIndex(spinner_tipoponto, tipoponto));
                 spinner_volume.setSelection(getIndex(spinner_volume, volume));
-
                 edt_obs.setText(observacao);
-
-
             }
         });
 
-        Toast.makeText(this,"Tipo ponto: " +db_tipoponto + "getIndex " + getIndex(spinner_tipoponto, db_tipoponto) ,LENGTH_SHORT).show();
+        Toast.makeText(this, "Tipo ponto: " + db_tipoponto + "getIndex " + getIndex(spinner_tipoponto, db_tipoponto), LENGTH_SHORT).show();
     }
 
-    private void readData (final FirestoreCallBackTipoponto firestoreCallBackTipoponto){
+    private void readData(final FirestoreCallBackTipoponto firestoreCallBackTipoponto) {
         DocumentReference docRef_tipoponto = mDatabase.collection("respostas").document("tipo_ponto");
         docRef_tipoponto.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                 if (task.isSuccessful()) {
-                    List<String> spinnerList_tipoponto= new ArrayList<String>();
+                    List<String> spinnerList_tipoponto = new ArrayList<String>();
                     for (Object item : task.getResult().getData().values()) {
                         spinnerList_tipoponto.add(item.toString());
                     }
-
                     firestoreCallBackTipoponto.onCallBack(spinnerList_tipoponto);
                 }
             }
@@ -124,13 +112,13 @@ public class EditaPontoActivity extends AppCompatActivity {
                 });
     }
 
-    private void readData ( final FirestoreCallBackVolume firestoreCallBackVolume){
+    private void readData(final FirestoreCallBackVolume firestoreCallBackVolume) {
         DocumentReference docRef_volume = mDatabase.collection("respostas").document("volume");
         docRef_volume.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
                 if (task.isSuccessful()) {
-                    List<String> spinnerList_volume= new ArrayList<String>();
+                    List<String> spinnerList_volume = new ArrayList<String>();
                     for (Object item : task.getResult().getData().values()) {
                         spinnerList_volume.add(item.toString());
                     }
@@ -148,7 +136,7 @@ public class EditaPontoActivity extends AppCompatActivity {
                 });
     }
 
-    private void readData ( final FirestoreCallBackPonto firestoreCallBackPonto) {
+    private void readData(final FirestoreCallBackPonto firestoreCallBackPonto) {
         DocumentReference docRef = mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos").document(pontoID);
         docRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
@@ -156,11 +144,10 @@ public class EditaPontoActivity extends AppCompatActivity {
                 if (task.isSuccessful()) {
                     DocumentSnapshot document = task.getResult();
                     if (document.exists()) {
-
                         String callback_tipoponto = document.getString("tipoponto");
                         String callback_volume = document.getString("volumeBTI");
                         String callback_obs = document.getString("observacao");
-                        firestoreCallBackPonto.onCallBack( callback_tipoponto, callback_volume, callback_obs );
+                        firestoreCallBackPonto.onCallBack(callback_tipoponto, callback_volume, callback_obs);
 
                         Log.d(TAG, "DocumentSnapshot data: " + document.getData());
                     } else {
@@ -175,34 +162,33 @@ public class EditaPontoActivity extends AppCompatActivity {
 
     public void gravaedicao(View view) {
         DocumentReference docRef = mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos").document(pontoID);
-        docRef.update( "tipoponto" , spinner_tipoponto.getSelectedItem().toString());
-        docRef.update( "volumeBTI" , spinner_volume.getSelectedItem().toString());
-        docRef.update( "observacao" , edt_obs.getText().toString());
+        docRef.update("tipoponto", spinner_tipoponto.getSelectedItem().toString());
+        docRef.update("volumeBTI", spinner_volume.getSelectedItem().toString());
+        docRef.update("observacao", edt_obs.getText().toString());
         finish();
     }
 
-    private interface FirestoreCallBackVolume{
-        void onCallBack (List<String> list);
+    private interface FirestoreCallBackVolume {
+        void onCallBack(List<String> list);
     }
 
     private interface FirestoreCallBackTipoponto {
-        void onCallBack (List<String> list);
+        void onCallBack(List<String> list);
     }
 
     private interface FirestoreCallBackPonto {
-        void onCallBack (String tipoponto, String volume, String observacao );
+        void onCallBack(String tipoponto, String volume, String observacao);
     }
 
     //private method of your class
-    private int getIndex(Spinner spinner, String myString){
-        for (int i=0;i<spinner.getCount();i++){
-            if (spinner.getItemAtPosition(i).toString().equals(myString)){
+    private int getIndex(Spinner spinner, String myString) {
+        for (int i = 0; i < spinner.getCount(); i++) {
+            if (spinner.getItemAtPosition(i).toString().equals(myString)) {
                 return i;
             }
         }
         return 0;
     }
-
 
     public void excluirponto(View view) {
         AlertDialog alertDialog = new AlertDialog.Builder(EditaPontoActivity.this).create();
@@ -214,7 +200,6 @@ public class EditaPontoActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         // Alert dialog action goes here
                         // onClick button code here
-
                         mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos").document(pontoID)
                                 .delete()
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -230,11 +215,8 @@ public class EditaPontoActivity extends AppCompatActivity {
                                         Log.w(TAG, "Error deleting document", e);
                                     }
                                 });
-
-
                         finish();
                         dialog.dismiss();// use dismiss to cancel alert dialog
-
                     }
                 });
         alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "CANCELAR",
@@ -242,9 +224,7 @@ public class EditaPontoActivity extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         // Alert dialog action goes here
                         // onClick button code here
-
                         dialog.dismiss();// use dismiss to cancel alert dialog
-
                     }
                 });
 
