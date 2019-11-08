@@ -1,6 +1,8 @@
 package br.com.aracajucontroledepragas.aracajulevantamento;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,6 +16,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.FragmentActivity;
 
 import com.google.android.gms.maps.CameraUpdate;
@@ -26,29 +29,45 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static android.widget.Toast.LENGTH_SHORT;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE;
+import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_GREEN;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_RED;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_YELLOW;
+import static com.google.firebase.firestore.core.DocumentViewChange.Type.ADDED;
+import static java.lang.Math.PI;
+import static java.lang.Math.acos;
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 
 public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWindowClickListener, OnMapReadyCallback, LocationListener {
     private static final String TAG = "MainActivity";
 
     private FirebaseFirestore mDatabase;
-    public int pontos_levantados = 0, zoom_reg;
+    public int num_pontos = 0, zoom_reg, pontos_levantados, num_pontos_30;
     private GoogleMap mMap;
     String locationText = "";
     public LocationManager locationManager;
     private int mInterval = 3000; // 3 seconds by default, can be changed later
     private long UPDATE_INTERVAL = 5 * 1000;  /* 30 secs */
     private Handler mHandler;
-    public String latitude_string = "", longitude_string = "", acuracia_string = "", stg_levantamento;
+    public String latitude_string = "", longitude_string = "", acuracia_string = "", stg_regiao;
     double Lat, Lng, Acc = 100, alt;
     TextView tv_npontos;
 
@@ -63,9 +82,9 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWi
         if (i != null) {
             Bundle params = i.getExtras();
             if (params != null) {
-                stg_levantamento = params.getString("levantamento");
+                stg_regiao = params.getString("levantamento");
                 TextView regialView = (TextView) findViewById(R.id.tv_regiao);
-                regialView.setText(stg_levantamento);
+                regialView.setText(stg_regiao);
 
             }
         }
@@ -85,9 +104,6 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWi
                 startRepeatingTask();
             }
         }, UPDATE_INTERVAL);   //5 seconds
-
-
-        carregapontosnomapa();
 
     }
 
@@ -111,7 +127,8 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWi
 
         mMap.setOnInfoWindowClickListener(this);
 
-        DocumentReference documentReference = mDatabase.collection("levantamento").document(stg_levantamento);
+        DocumentReference documentReference = mDatabase.collection("levantamento").document(stg_regiao);
+
         documentReference.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
             public void onComplete(@NonNull Task<DocumentSnapshot> task) {
@@ -120,9 +137,10 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWi
                     if (document.exists()) {
                         Lat = document.getGeoPoint("centro").getLatitude();
                         Lng = document.getGeoPoint("centro").getLongitude();
+                        zoom_reg = document.getDouble("zoom").intValue();
                         Log.d(TAG, "DocumentSnapshot data: " + Lat + Lng);
                         CameraUpdate center = CameraUpdateFactory.newLatLng(new LatLng(Lat, Lng));
-                        CameraUpdate zoom = CameraUpdateFactory.zoomTo(11);
+                        CameraUpdate zoom = CameraUpdateFactory.zoomTo(zoom_reg);
                         mMap.moveCamera(center);
                         mMap.animateCamera(zoom);
                     } else {
@@ -133,8 +151,8 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWi
                 }
             }
         });
-
-
+        mMap.clear();
+        carregapontosnomapa();
     }
 
     @Override
@@ -144,32 +162,59 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWi
 
         Bundle params = new Bundle();
         params.putString("pontoID", marker.getTag().toString());
-        params.putString("levantamento", stg_levantamento);
+        params.putString("markerID", marker.getId());
+        params.putString("levantamento", stg_regiao);
         intent.putExtras(params);
         startActivity(intent);
 
-        Toast.makeText(this, marker.getTag().toString(),
-                Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, marker.getTag().toString(), LENGTH_SHORT).show();
     }
 
     public void chamaGravaPonto(View view) {
         if (Acc < 21) {
-            Intent intent = new Intent(this, GravaPontoActivity.class);
-
-            Bundle params = new Bundle();
-            params.putString("levantamento", stg_levantamento);
-            params.putDouble("latitude", Lat);
-            params.putDouble("longitude", Lng);
-            params.putDouble("altitude", alt);
-            params.putDouble("acuracia", Acc);
-            intent.putExtras(params);
-
-            startActivity(intent);
-        } else {
-            Toast.makeText(MapsActivity.this, " Precisão de GPS muito baixa, aguarde... ", Toast.LENGTH_SHORT).show();
-        }
+            num_pontos_30 = 0;
+            mDatabase.collection("/producao/" + stg_regiao + "/pontos")
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                            if (task.isSuccessful()) {
+                                for (QueryDocumentSnapshot document : (task.getResult())) {
+                                    double lat = Objects.requireNonNull(document.getGeoPoint("latlon")).getLatitude();
+                                    double lng = Objects.requireNonNull(document.getGeoPoint("latlon")).getLongitude();
+                                    double distancia = Distance(Lat, Lng, lat, lng, "K");
+                                    if (distancia <= 30) { //Se encontrar um ponto na base de dados a menos  de 30 metros
+                                        num_pontos_30++;
+                                    }
+                                }
+                                num_pontos = num_pontos_30 / 2; // nao sei porque o numero é somado em duplicidade, para corrigir dividi por 2
+                                if (num_pontos_30 == 0) { chamaGravaPontoActivity(); }
+                                if (num_pontos_30 == 1) { //se encontrado apenas um ponto em 30 metros
+                                    Log.d(TAG, "Encontrado 1: " + num_pontos_30);
+                                }
+                                // fazer analise se encontrar mais de um ponto proximo.
+                                if (num_pontos_30 > 1) {
+                                    Log.d(TAG, "Encontrado +1: " + num_pontos_30);
+                                }
+                            } else { Log.d(TAG, "Error getting documents: ", task.getException()); }
+                        }
+                    });
+        } else { Toast.makeText(MapsActivity.this, " Precisão de GPS muito baixa, aguarde... ", Toast.LENGTH_SHORT).show(); }
     }
 
+    private void chamaGravaPontoActivity() {
+
+        Intent intent = new Intent(this, GravaPontoActivity.class);
+        Bundle params = new Bundle();
+        params.putString("levantamento", stg_regiao);
+        params.putDouble("latitude", Lat);
+        params.putDouble("longitude", Lng);
+        params.putDouble("altitude", alt);
+        params.putDouble("acuracia", Acc);
+        intent.putExtras(params);
+
+        startActivity(intent);
+    }
 
     Runnable mStatusChecker = new Runnable() {
         @Override
@@ -223,60 +268,137 @@ public class MapsActivity extends FragmentActivity implements GoogleMap.OnInfoWi
 
     }
 
-
-
-
     private void carregapontosnomapa() {
 
-
-
-        mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos")
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+        mDatabase.collection("/levantamento/" + stg_regiao + "/pontos")
+                .addSnapshotListener(new EventListener<QuerySnapshot>() {
                     @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            for (QueryDocumentSnapshot document : task.getResult()) {
-                                Double lat = document.getGeoPoint("latlon").getLatitude();
-                                Double lng = document.getGeoPoint("latlon").getLongitude();
-                                String tipoponto = String.valueOf(document.get("tipoponto"));
-                                String titulo = document.get("volumeBTI").toString() + " ml";
-                                Float color = HUE_RED;
+                    public void onEvent(@Nullable QuerySnapshot value,
+                                        @Nullable FirebaseFirestoreException e) {
+                        if (e != null) {
+                            Log.w(TAG, "Listen failed.", e);
+                            return;
+                        }
 
-                                if (tipoponto.trim().equals("Coleta")) {
-                                    color = HUE_AZURE;
-                                    titulo = document.get("observacao").toString();
-                                }
-                                if (tipoponto.trim().equals("Referência")) {
-                                    color = HUE_YELLOW;
-                                    titulo = document.get("observacao").toString();
-                                }
+                        for (DocumentChange dc : value.getDocumentChanges()) {
+                            switch (dc.getType()) {
+                                case ADDED:
+
+                                    Double lat = dc.getDocument().getGeoPoint("latlon").getLatitude();
+                                    Double lng = dc.getDocument().getGeoPoint("latlon").getLongitude();
+                                    String tipoponto = String.valueOf(dc.getDocument().get("tipoponto"));
+                                    String titulo = dc.getDocument().get("volumeBTI").toString() + " ml";
+                                    Float color = HUE_RED;
+
+                                    if (tipoponto.trim().equals("Coleta")) {
+                                        color = HUE_AZURE;
+                                        titulo = dc.getDocument().get("observacao").toString();
+                                    }
+                                    if (tipoponto.trim().equals("Referência")) {
+                                        color = HUE_YELLOW;
+                                        titulo = dc.getDocument().get("observacao").toString();
+                                    }
+                                    if (tipoponto.trim().equals("Vazão")) {
+                                        color = HUE_GREEN;
+                                        titulo = dc.getDocument().get("observacao").toString();
+                                    }
 
 
-                                mMap.addMarker(new MarkerOptions()
-                                        .position(new LatLng(lat, lng))
-                                        .title(titulo)
-                                        .icon(BitmapDescriptorFactory.defaultMarker(color)))
-                                        .setTag(document.getId());
+                                    mMap.addMarker(new MarkerOptions()
+                                            .position(new LatLng(lat, lng))
+                                            .title(titulo)
+                                            .icon(BitmapDescriptorFactory.defaultMarker(color)))
+                                            .setTag(dc.getDocument().getId());
+                                    pontos_levantados++;
+
+                                    break;
+                                case MODIFIED:
+                                    Log.d(TAG, "Modificado: " + dc.getDocument().getData());
+                                    break;
+                                case REMOVED:
+                                    Log.d(TAG, "Removido: " + dc.getDocument().getData());
+                                    break;
 
 
-                                pontos_levantados++;
                             }
-                            pontos_levantados = pontos_levantados / 2;
+                            //pontos_levantados = pontos_levantados / 2;
                             tv_npontos.setText(String.valueOf(pontos_levantados));
-                        } else {
-                            Log.d(TAG, "Error getting documents: ", task.getException());
+                            //Log.d(TAG, "Pontos: " + pontos );
                         }
                     }
                 });
+
+
+//        mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos")
+//                .get()
+//                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+//                        if (task.isSuccessful()) {
+//                            for (QueryDocumentSnapshot document : task.getResult()) {
+//                                Double lat = document.getGeoPoint("latlon").getLatitude();
+//                                Double lng = document.getGeoPoint("latlon").getLongitude();
+//                                String tipoponto = String.valueOf(document.get("tipoponto"));
+//                                String titulo = document.get("volumeBTI").toString() + " ml";
+//                                Float color = HUE_RED;
+//
+//                                if (tipoponto.trim().equals("Coleta")) {
+//                                    color = HUE_AZURE;
+//                                    titulo = document.get("observacao").toString();
+//                                }
+//                                if (tipoponto.trim().equals("Referência")) {
+//                                    color = HUE_YELLOW;
+//                                    titulo = document.get("observacao").toString();
+//                                }
+//                                if (tipoponto.trim().equals("Vazão")) {
+//                                    color = HUE_GREEN;
+//                                    titulo = document.get("observacao").toString();
+//                                }
+//
+//
+//
+//                                mMap.addMarker(new MarkerOptions()
+//                                        .position(new LatLng(lat, lng))
+//                                        .title(titulo)
+//                                        .icon(BitmapDescriptorFactory.defaultMarker(color)))
+//                                        .setTag(document.getId());
+//
+//
+//                                pontos_levantados++;
+//                            }
+//                            pontos_levantados = pontos_levantados / 2;
+//                            tv_npontos.setText(String.valueOf(pontos_levantados));
+//                        } else {
+//                            Log.d(TAG, "Error getting documents: ", task.getException());
+//                        }
+//                    }
+//                });
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        //carregapontosnomapa();
+    }
 
-        carregapontosnomapa();
+    public static double deg2rad(double angdeg) {
+        return angdeg / 180.0 * PI;
+    }
+
+    double Distance(double lat1, double lon1, double lat2, double lon2, String unit) {
+        double radius = 6378.137; // earth mean radius defined by WGS84
+        double dlon = lon1 - lon2;
+        double distance = acos(sin(deg2rad(lat1)) * sin(deg2rad(lat2)) + cos(deg2rad(lat1)) * cos(deg2rad(lat2)) * cos(deg2rad(dlon))) * radius;
+        if (unit == "K") {
+            return (distance) * 1000;
+        } else if (unit == "M") {
+            return (distance * 0.621371192);
+        } else if (unit == "N") {
+            return (distance * 0.539956803);
+        } else {
+            return 0;
+        }
     }
 
     @Override

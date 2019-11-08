@@ -21,6 +21,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.common.collect.Maps;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -28,14 +29,17 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.List;
 
+import static android.widget.Toast.LENGTH_SHORT;
+
 public class EditaPontoActivity extends AppCompatActivity {
     private static final String TAG = "EditaPontoActivity";
     private FirebaseFirestore mDatabase;
     Spinner spinner_tipoponto, spinner_volume;
-    //List<String> spinnerList_tipoponto = new ArrayList<String>();
-    //List<String> spinnerList_volume = new ArrayList<String>();
+    ArrayAdapter<String> arrayAdapter_volume_p, arrayAdapter_tipoponto_p;
+    List<String> spinnerList_tipoponto = new ArrayList<String>();
+    List<String> spinnerList_volume = new ArrayList<String>();
     EditText edt_obs;
-    String pontoID, stg_levantamento, db_tipoponto, db_volume, db_observacao;
+    String pontoID, markerID, stg_levantamento, db_tipoponto, db_volume, db_observacao;
     TextView tv_pontoID;
 
     @Override
@@ -52,6 +56,7 @@ public class EditaPontoActivity extends AppCompatActivity {
             Bundle params = i.getExtras();
             if (params != null) {
                 pontoID = params.getString("pontoID");
+                markerID = params.getString("markerID");
                 stg_levantamento = params.getString("levantamento");
             }
         }
@@ -63,6 +68,7 @@ public class EditaPontoActivity extends AppCompatActivity {
             public void onCallBack(List<String> list) {
                 ArrayAdapter<String> arrayAdapter_tipoponto = new ArrayAdapter<String>(EditaPontoActivity.this, android.R.layout.simple_spinner_item, list);
                 arrayAdapter_tipoponto.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                arrayAdapter_tipoponto_p = arrayAdapter_tipoponto;
                 spinner_tipoponto.setAdapter(arrayAdapter_tipoponto);
 
             }
@@ -72,41 +78,26 @@ public class EditaPontoActivity extends AppCompatActivity {
             public void onCallBack(List<String> list) {
                 ArrayAdapter<String> arrayAdapter_volume = new ArrayAdapter<String>(EditaPontoActivity.this, android.R.layout.simple_spinner_dropdown_item, list);
                 arrayAdapter_volume.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                arrayAdapter_volume_p = arrayAdapter_volume;
                 spinner_volume.setAdapter(arrayAdapter_volume);
             }
         });
 
         readData(new FirestoreCallBackPonto() {
             @Override
-            public void onCallBack(String tipoponto, String volume, String obs) {
+            public void onCallBack(String tipoponto, String volume, String observacao) {
+            //TODO carergar valores do banco na tela
 
+                spinner_tipoponto.setSelection(getIndex(spinner_tipoponto, tipoponto));
+                spinner_volume.setSelection(getIndex(spinner_volume, volume));
 
+                edt_obs.setText(observacao);
 
-//TODO carergar valores do banco na tela
-
-
-
-                db_tipoponto = tipoponto;
-                db_volume = volume;
-                db_observacao = obs;
-
-                try {
-                    spinner_tipoponto.setSelection(0);
-
-                    //tv_pontoID.setText("Tipo ponto: "+ spinner_tipoponto.get);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-               // tv_pontoID.setText("Tipo ponto: "+db_tipoponto);
 
             }
         });
 
-
-
-
-
+        Toast.makeText(this,"Tipo ponto: " +db_tipoponto + "getIndex " + getIndex(spinner_tipoponto, db_tipoponto) ,LENGTH_SHORT).show();
     }
 
     private void readData (final FirestoreCallBackTipoponto firestoreCallBackTipoponto){
@@ -182,6 +173,14 @@ public class EditaPontoActivity extends AppCompatActivity {
         });
     }
 
+    public void gravaedicao(View view) {
+        DocumentReference docRef = mDatabase.collection("/levantamento/" + stg_levantamento + "/pontos").document(pontoID);
+        docRef.update( "tipoponto" , spinner_tipoponto.getSelectedItem().toString());
+        docRef.update( "volumeBTI" , spinner_volume.getSelectedItem().toString());
+        docRef.update( "observacao" , edt_obs.getText().toString());
+        finish();
+    }
+
     private interface FirestoreCallBackVolume{
         void onCallBack (List<String> list);
     }
@@ -191,9 +190,18 @@ public class EditaPontoActivity extends AppCompatActivity {
     }
 
     private interface FirestoreCallBackPonto {
-        void onCallBack (String tipoponto, String volume, String observacao);
+        void onCallBack (String tipoponto, String volume, String observacao );
     }
 
+    //private method of your class
+    private int getIndex(Spinner spinner, String myString){
+        for (int i=0;i<spinner.getCount();i++){
+            if (spinner.getItemAtPosition(i).toString().equals(myString)){
+                return i;
+            }
+        }
+        return 0;
+    }
 
 
     public void excluirponto(View view) {
@@ -212,7 +220,7 @@ public class EditaPontoActivity extends AppCompatActivity {
                                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                                     @Override
                                     public void onSuccess(Void aVoid) {
-                                        Toast.makeText(EditaPontoActivity.this, " Ponto EXCLUIDO com sucesso", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(EditaPontoActivity.this, " Ponto EXCLUIDO com sucesso", LENGTH_SHORT).show();
                                         Log.d(TAG, "DocumentSnapshot successfully deleted!");
                                     }
                                 })
@@ -222,7 +230,6 @@ public class EditaPontoActivity extends AppCompatActivity {
                                         Log.w(TAG, "Error deleting document", e);
                                     }
                                 });
-
 
 
                         finish();
@@ -245,7 +252,5 @@ public class EditaPontoActivity extends AppCompatActivity {
 
 
     }
-
-
 
 }

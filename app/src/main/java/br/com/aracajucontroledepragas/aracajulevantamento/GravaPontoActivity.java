@@ -144,6 +144,8 @@ public class GravaPontoActivity extends AppCompatActivity implements AdapterView
             Toast.makeText(GravaPontoActivity.this, "Preencha OBSERVAÇÃO", Toast.LENGTH_SHORT).show();
         } else if ((tipo_ponto.trim().equals("Referência")) && (obs.trim().equals(""))) {
             Toast.makeText(GravaPontoActivity.this, "Preencha OBSERVAÇÃO", Toast.LENGTH_SHORT).show();
+        } else if ((tipo_ponto.trim().equals("Vazão")) && (obs.trim().equals(""))) {
+            Toast.makeText(GravaPontoActivity.this, "Preencha OBSERVAÇÃO", Toast.LENGTH_SHORT).show();
         } else {
             // cria objeto
             Map<String, Object> objeto = new HashMap<>();
